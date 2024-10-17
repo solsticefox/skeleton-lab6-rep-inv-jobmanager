@@ -57,9 +57,10 @@ public class JobManager {
     public JobManager(int n) {
         if (n < 1) {throw new IllegalArgumentException("n must be at least 1");}
         this.n = n;
-        for (int i = 0; i < n; i++) {
+        for (int i = 1; i <= n; i++) {
             this.unassignedJobs.add(i);
         }
+        checkRep();
     };
 
     /**
@@ -70,6 +71,7 @@ public class JobManager {
      */
     public boolean hasRobot(Robot robot) {
         if (robot == null || robot.isNull()) { return false; }
+        checkRep();
         return this.robotToJobs.containsKey(robot);
     }
 
@@ -84,8 +86,10 @@ public class JobManager {
         if (robot == null || robot.isNull()) { return false; }
         if (!this.robotToJobs.containsKey(robot)) {
             this.robotToJobs.put(robot, new TreeSet<>());
+            checkRep();
             return true;
         }
+        checkRep();
         return false;
     };
 
@@ -100,8 +104,10 @@ public class JobManager {
         if (robot == null || robot.isNull()) { return false; }
         if (this.robotToJobs.containsKey(robot)) {
             this.robotToJobs.remove(robot);
+            checkRep();
             return true;
         }
+        checkRep();
         return false;
     };
 
@@ -119,7 +125,10 @@ public class JobManager {
      */
     public boolean assignJobs(Robot robot, int jobId) {
         if (robot == null || robot.isNull()) { return false; }
-        if (!this.robotToJobs.containsKey(robot)) { return false; }
+        if (!this.robotToJobs.containsKey(robot)) {
+            checkRep();
+            return false;
+        }
         for (Iterator<Integer> jobIter = this.unassignedJobs.iterator(); jobIter.hasNext();) {
             Integer job = jobIter.next();
             if (job <= jobId) {
@@ -127,6 +136,7 @@ public class JobManager {
             }
             else { break; }
         }
+        checkRep();
         return true;
     }
 
@@ -139,7 +149,8 @@ public class JobManager {
      */
     public boolean isAssigned(int jobId) {
         if (jobId < 1 || jobId > n) { return false; }
-        return this.unassignedJobs.contains(jobId);
+        checkRep();
+        return !this.unassignedJobs.contains(jobId);
     }
 
     /**
@@ -152,8 +163,12 @@ public class JobManager {
     public Robot getRobot(int jobId) {
         if (jobId < 1 || jobId > this.n) { return new Robot(0); }
         for (Robot robot : this.robotToJobs.keySet()) {
-            if (this.robotToJobs.get(robot).contains(jobId)) { return new Robot(robot.id); }
+            if (this.robotToJobs.get(robot).contains(jobId)) {
+                checkRep();
+                return new Robot(robot.id);
+            }
         }
+        checkRep();
         return new Robot(0);
     }
 
@@ -175,7 +190,10 @@ public class JobManager {
         if (srcRobot == null || dstRobot == null) { return false; }
         if (srcRobot.isNull() || dstRobot.isNull()) { return false; }
         if (jobId < 1) { return false; }
-        if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) { return false; }
+        if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) {
+            checkRep();
+            return false;
+        }
         for (Iterator<Integer> jobIter = this.robotToJobs.get(srcRobot).iterator(); jobIter.hasNext();) {
             Integer job = jobIter.next();
             if (job <= jobId) {
@@ -183,6 +201,7 @@ public class JobManager {
             }
             else { break; }
         }
+        checkRep();
         return true;
 
     }
@@ -201,8 +220,11 @@ public class JobManager {
     public boolean moveJobs(Robot srcRobot, Robot dstRobot) {
         if (srcRobot == null || dstRobot == null) { return false; }
         if (srcRobot.isNull() || dstRobot.isNull()) { return false; }
-        if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) { return false; }
+        if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) {
+            checkRep();
+            return false; }
         this.robotToJobs.get(dstRobot).addAll(this.robotToJobs.get(srcRobot));
+        checkRep();
         return true;
     }
 
@@ -218,8 +240,13 @@ public class JobManager {
     public int getHighestPriorityJob(Robot robot, int jobId) {
         if (robot == null || robot.isNull()) { return 0; }
         if (jobId < 1) { return 0; }
-        if (!this.robotToJobs.containsKey(robot)) { return 0; }
-        if (this.robotToJobs.get(robot).isEmpty()) { return 0; }
+        if (!this.robotToJobs.containsKey(robot)) {
+            checkRep();
+            return 0; }
+        if (this.robotToJobs.get(robot).isEmpty()) {
+            checkRep();
+            return 0; }
+        checkRep();
         return this.robotToJobs.get(robot).floor(jobId);
     }
 
@@ -268,5 +295,40 @@ public class JobManager {
     public void checkRep() {
         // TODO implement this method
         // DO NOT USE THE `assert` keyword; You must use `throw new AssertionError()`
+        for (Robot robot : robotToJobs.keySet()) {
+            if (robot.id < 1) {
+                throw new AssertionError();
+            }
+        }
+        if (this.n <= 0) {
+            throw new AssertionError();
+        }
+        for (int num : this.unassignedJobs) {
+            if (num == 0) {
+                throw new AssertionError();
+            }
+        }
+        List<Integer> numbers = new ArrayList<Integer>();
+        List <Integer> thisNumbers = new ArrayList<>();
+        for (int i = 1; i <= this.n; i++) {
+            numbers.add(i);
+            //numbers.add(i);
+        }
+        for (int num : this.unassignedJobs) {
+            thisNumbers.add(num);
+        }
+        for (TreeSet<Integer> tset : robotToJobs.values()) {
+            thisNumbers.addAll(tset);
+            TreeSet<Integer> compSet = new TreeSet<>();
+            compSet.addAll(tset);
+            if (tset.last() < tset.first() && tset.size() > 1) {
+                throw new AssertionError();
+            }
+        }
+        Collections.sort(thisNumbers);
+        if (!numbers.equals(thisNumbers)) {
+            throw new AssertionError();
+        }
+
     }
 }
