@@ -103,6 +103,9 @@ public class JobManager {
     public boolean removeRobot(Robot robot) {
         if (robot == null || robot.isNull()) { return false; }
         if (this.robotToJobs.containsKey(robot)) {
+            for (int num : this.robotToJobs.get(robot)) {
+                this.unassignedJobs.add(num);
+            }
             this.robotToJobs.remove(robot);
             checkRep();
             return true;
@@ -129,13 +132,17 @@ public class JobManager {
             checkRep();
             return false;
         }
+        Set<Integer> modifiedUnassigned = new HashSet<>(this.unassignedJobs);
         for (Iterator<Integer> jobIter = this.unassignedJobs.iterator(); jobIter.hasNext();) {
             Integer job = jobIter.next();
             if (job <= jobId) {
                 this.robotToJobs.get(robot).add(job);
+                modifiedUnassigned.remove(job);
             }
             else { break; }
         }
+        this.unassignedJobs.clear();
+        this.unassignedJobs.addAll(modifiedUnassigned);
         checkRep();
         return true;
     }
@@ -201,6 +208,9 @@ public class JobManager {
             }
             else { break; }
         }
+        if (!srcRobot.equals(dstRobot)) {
+            robotToJobs.get(srcRobot).clear();
+        }
         checkRep();
         return true;
 
@@ -224,6 +234,9 @@ public class JobManager {
             checkRep();
             return false; }
         this.robotToJobs.get(dstRobot).addAll(this.robotToJobs.get(srcRobot));
+        if (!srcRobot.equals(dstRobot)) {
+            this.robotToJobs.get(srcRobot).clear();
+        }
         checkRep();
         return true;
     }
@@ -321,7 +334,7 @@ public class JobManager {
             thisNumbers.addAll(tset);
             TreeSet<Integer> compSet = new TreeSet<>();
             compSet.addAll(tset);
-            if (tset.last() < tset.first() && tset.size() > 1) {
+            if (tset.size() > 1 && tset.last() < tset.first()) {
                 throw new AssertionError();
             }
         }
